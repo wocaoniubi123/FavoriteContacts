@@ -7,6 +7,7 @@
 #import "ZDHHFavoriteBar.h"
 #import "ZDHHCommon.h"
 #import <objc/runtime.h>
+#import <math.h>
 
 typedef NS_ENUM(NSInteger, ZDHHSettingRowType) {
     ZDHHSettingRowTypeSwitch = 0,

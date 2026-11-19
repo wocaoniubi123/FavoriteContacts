@@ -31,7 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)reload;
 
 /// 把头像条挂到首页控制器上（在 tableView 没有走 section header 时兜底）
-- (void)attachToControllerIfNeeded:(UIViewController *)vc;
+/// vc 仅作上下文，可为 nil
+- (void)attachToControllerIfNeeded:(nullable UIViewController *)vc;
 
 @end
 

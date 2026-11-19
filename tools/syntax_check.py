@@ -46,11 +46,21 @@ ARGS = [
     "-I", STUB,
     "-F", STUB,
     "-ferror-limit=0",
-    "-Wno-everything",
-    # Theos 默认把警告当错误，这里把最容易在真机编译时炸的几类单独打开
+    # 对齐 Theos 的严格度：它把警告当错误，这里只关掉桩头文件必然产生的噪音
+    "-Wall",
+    "-Wno-unused-parameter",
+    "-Wno-unused-variable",
+    "-Wno-unused-function",
+    "-Wno-objc-missing-property-synthesis",
+    "-Wno-nullability-completeness",
+    "-Wno-deprecated-declarations",
+    "-Wno-format",
+    "-Wno-unused-value",
+    "-Wno-parentheses",
+    # 这几类在真机编译里最容易炸
     "-Warc-retain-cycles",
     "-Warc-unsafe-retained-assign",
-    "-Wobjc-interface-ivars",
+    "-Wnonnull",
 ]
 
 SEVERITY = {0: "IGN", 1: "NOTE", 2: "WARN", 3: "ERR", 4: "FATAL"}

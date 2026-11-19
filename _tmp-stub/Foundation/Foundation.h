@@ -41,10 +41,17 @@ typedef unsigned long UTF32Char;
 #define NS_REFINED_FOR_SWIFT
 #define NS_DESIGNATED_INITIALIZER
 #define NS_UNAVAILABLE
-#define __nullable
-#define __nonnull
-#define NS_ASSUME_NONNULL_BEGIN_ stub_marker_begin
 #define NS_TYPED_EXTENSIBLE_ENUM
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef MAX
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef ABS
+#define ABS(a) ((a) < 0 ? -(a) : (a))
+#endif
 
 #pragma mark - 几何
 
@@ -117,8 +124,6 @@ void method_exchangeImplementations(Method m1, Method m2);
 const char *property_getName(objc_property_t p);
 const char *property_getAttributes(objc_property_t p);
 id objc_msgSend(id self, SEL op, ...);
-id objc_msgSendSuper(void *super, SEL op, ...);
-void objc_msgSend_stret(void *ret, id self, SEL op, ...);
 SEL sel_registerName(const char *str);
 const char *sel_getName(SEL sel);
 BOOL sel_isEqual(SEL lhs, SEL rhs);

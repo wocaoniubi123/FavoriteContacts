@@ -108,8 +108,8 @@ FOUNDATION_EXPORT NSString *const ZDHHConfigChangedNotification;
 /// 会话是否免打扰
 + (BOOL)isMutedForWxid:(NSString *)wxid;
 
-/// 打开与某人的聊天
-+ (BOOL)openChatWithWxid:(NSString *)wxid fromController:(UIViewController *)vc;
+/// 打开与某人的聊天；vc 可为 nil（会自动找顶层导航控制器）
++ (BOOL)openChatWithWxid:(NSString *)wxid fromController:(nullable UIViewController *)vc;
 
 /// 当前顶层可用的 UINavigationController
 + (nullable UINavigationController *)topNavigationController;

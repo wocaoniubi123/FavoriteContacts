@@ -23,6 +23,7 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <substrate.h>
+#include <stdlib.h>
 
 #import "ZDHHCommon.h"
 #import "ZDHHFavoriteBar.h"
