@@ -1,0 +1,8 @@
+# 全仓库强制 LF：Theos 在 macOS 上构建，CRLF 会破坏 shell 脚本与 Makefile
+* text=auto eol=lf
+
+# 二进制文件不做转换
+*.png binary
+*.jpg binary
+*.deb binary
+*.dylib binary

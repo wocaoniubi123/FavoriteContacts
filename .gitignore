@@ -1,0 +1,11 @@
+# Theos build output
+.theos/
+packages/
+*.deb
+
+# macOS
+.DS_Store
+
+# 编译器中间产物
+*.o
+*.d
