@@ -16,10 +16,7 @@ jobs:
         run: |
           set -e
           brew install ldid xz || true
-          echo "--- versions ---"
           make --version | head -1
-          xz --version | head -1
-          ldid -v 2>&1 | head -1 || true
 
       - name: Setup Theos
         run: |
@@ -30,19 +27,28 @@ jobs:
           git clone --depth 1 https://github.com/theos/sdks.git "$THEOS/sdks"
           echo "THEOS=$THEOS" >> "$GITHUB_ENV"
           echo "$THEOS/bin" >> "$GITHUB_PATH"
-          echo "--- available SDKs ---"
           ls "$THEOS/sdks" || true
 
-      - name: Build package
+      - name: Build rootful
         run: |
           set -e
+          make clean || true
           make package FINALPACKAGE=1
+          mkdir -p dist
+          mv packages/*.deb dist/FavoriteContacts-rootful_2.0.1.deb
+
+      - name: Build rootless
+        run: |
+          set -e
+          make clean || true
+          make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          mv packages/*.deb dist/FavoriteContacts-rootless_2.0.1.deb
           echo "--- artifacts ---"
-          ls -la packages/ || true
+          ls -la dist/
 
       - name: Upload deb
         uses: actions/upload-artifact@v4
         with:
           name: FavoriteContacts-deb
-          path: packages/*.deb
+          path: dist/*.deb
           if-no-files-found: error

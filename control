@@ -1,9 +1,9 @@
 Package: com.zdhh.favoritecontacts
 Name: 常用会话
-Version: 2.0.0
+Version: 2.0.1
 Architecture: iphoneos-arm64
 Description: 微信首页顶栏常用会话头像栏（重写版）
 Maintainer: rewrite
 Author: rewrite
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000), firmware (>= 14.0)
+Depends: mobilesubstrate (>= 0.9.5000)

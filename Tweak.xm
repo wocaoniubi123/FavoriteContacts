@@ -29,6 +29,13 @@
 #import "ZDHHFavoriteBar.h"
 #import "ZDHHSettingsViewController.h"
 
+#pragma mark - 日志
+
+// 设备上抓日志：
+//   log stream --predicate 'eventMessage CONTAINS "[ZDHH]"'
+// 或  tail -f /var/log/syslog | grep ZDHH
+#define ZDHHLog(fmt, ...) NSLog(@"[ZDHH] " fmt, ##__VA_ARGS__)
+
 #pragma mark - 刷新
 
 static void ZDHHRebuildBar(void) {
@@ -150,7 +157,10 @@ static BOOL ZDHHInstallHook(Class cls, SEL sel, IMP replacement, IMP *original, 
 
 static BOOL ZDHHRegisterSettingsPage(void) {
     Class WCPluginsMgr = NSClassFromString(@"WCPluginsMgr");
-    if (!WCPluginsMgr) return NO;
+    if (!WCPluginsMgr) {
+        ZDHHLog(@"register: WCPluginsMgr NOT FOUND");
+        return NO;
+    }
 
     id mgr = nil;
     @try {
@@ -160,16 +170,24 @@ static BOOL ZDHHRegisterSettingsPage(void) {
     } @catch (__unused NSException *e) {
         mgr = nil;
     }
-    if (!mgr) return NO;
+    if (!mgr) {
+        ZDHHLog(@"register: [WCPluginsMgr sharedInstance] returned nil");
+        return NO;
+    }
 
     SEL registerSel = NSSelectorFromString(@"registerControllerWithTitle:version:controller:");
-    if (![mgr respondsToSelector:registerSel]) return NO;
+    if (![mgr respondsToSelector:registerSel]) {
+        ZDHHLog(@"register: selector registerControllerWithTitle:version:controller: missing");
+        return NO;
+    }
 
     @try {
         ((void (*)(id, SEL, id, id, Class))objc_msgSend)(
-            mgr, registerSel, @"常用会话", @"2.0.0", [ZDHHSettingsViewController class]);
+            mgr, registerSel, @"常用会话", @"2.0.1", [ZDHHSettingsViewController class]);
+        ZDHHLog(@"register: OK");
         return YES;
-    } @catch (__unused NSException *e) {
+    } @catch (NSException *e) {
+        ZDHHLog(@"register: exception %@ - %@", e.name, e.reason);
         return NO;
     }
 }
@@ -177,8 +195,9 @@ static BOOL ZDHHRegisterSettingsPage(void) {
 #pragma mark - 入口
 
 __attribute__((constructor))
-static void ZDHHInit(void) {
+void ZDHHInit(void) {          // 不能加 static：未引用的 static 函数可能被 dead-strip，constructor 不执行
     @autoreleasepool {
+        ZDHHLog(@"loaded v2.0.1, waiting for WeChat classes");
         // 微信可能还没把类加载完，延迟一轮再装；最多重试 10 次（共 5 秒）
         __block NSInteger attempts = 0;
         __block void (^tryInstall)(void) = nil;
@@ -212,21 +231,28 @@ static void ZDHHInit(void) {
                                 (IMP)hook_updateMainSessionListNotify, (IMP *)&orig_updateMainSessionListNotify, "v@:@");
             }
 
-            if (main && sessionMgr) {
-                // 类都齐了；设置页要等 WCPluginsMgr 就绪，注册不上就继续重试
-                static BOOL settingsRegistered = NO;
-                if (!settingsRegistered) {
-                    settingsRegistered = ZDHHRegisterSettingsPage();
-                }
-                if (settingsRegistered) return;
+            // 设置页注册与 hook 安装解耦：只要 WCPluginsMgr 就绪就注册，不依赖 main/sessionMgr
+            static BOOL settingsRegistered = NO;
+            if (!settingsRegistered) {
+                settingsRegistered = ZDHHRegisterSettingsPage();
+                ZDHHLog(@"attempt %ld: main=%d sessionMgr=%d settings=%d",
+                        (long)attempts, main != nil, sessionMgr != nil, settingsRegistered);
             }
 
-            if (attempts < 10) {
+            if (main && sessionMgr && settingsRegistered) {
+                ZDHHLog(@"all targets installed");
+                return;
+            }
+
+            if (attempts < 60) {
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
                                dispatch_get_main_queue(), ^{
                     void (^block)(void) = weakInstall;
                     if (block) block();
                 });
+            } else {
+                ZDHHLog(@"gave up after %ld attempts (main=%d sessionMgr=%d settings=%d)",
+                        (long)attempts, main != nil, sessionMgr != nil, settingsRegistered);
             }
         };
         weakInstall = tryInstall;

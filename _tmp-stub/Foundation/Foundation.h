@@ -104,6 +104,8 @@ Class NSClassFromString(NSString *aClassName);
 NSString *NSStringFromClass(Class aClass);
 SEL NSSelectorFromString(NSString *aSelectorName);
 NSString *NSStringFromSelector(SEL aSelector);
+void NSLog(NSString *format, ...);
+void NSLogv(NSString *format, void *args);
 Class object_getClass(id obj);
 const char *class_getName(Class cls);
 Class class_getSuperclass(Class cls);
