@@ -47,9 +47,16 @@ ARGS = [
     "-F", STUB,
     "-ferror-limit=0",
     "-Wno-everything",
+    # Theos 默认把警告当错误，这里把最容易在真机编译时炸的几类单独打开
+    "-Warc-retain-cycles",
+    "-Warc-unsafe-retained-assign",
+    "-Wobjc-interface-ivars",
 ]
 
 SEVERITY = {0: "IGN", 1: "NOTE", 2: "WARN", 3: "ERR", 4: "FATAL"}
+
+# Theos 会把这些当 error，本地先按 error 对待
+PROMOTED_WARNINGS = ("retain cycle", "arc", "incompatible pointer")
 
 
 def check(path):
@@ -58,22 +65,26 @@ def check(path):
                      options=ci.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
     diags = list(tu.diagnostics)
     errors = [d for d in diags if d.severity >= ci.Diagnostic.Error]
+    promoted = [d for d in diags
+                if d.severity == ci.Diagnostic.Warning
+                and any(k in d.spelling.lower() for k in PROMOTED_WARNINGS)]
 
     name = os.path.basename(path)
-    print(f"=== {name}: diag={len(diags)} errors={len(errors)}")
+    print(f"=== {name}: diag={len(diags)} errors={len(errors)} promoted={len(promoted)}")
 
     seen = set()
-    for d in errors:
+    for d in errors + promoted:
         key = (str(d.location.file), d.location.line, d.spelling)
         if key in seen:
             continue
         seen.add(key)
+        tag = "ERR" if d.severity >= ci.Diagnostic.Error else "ERR(theos)"
         f = os.path.basename(str(d.location.file)) if d.location.file else "?"
-        print(f"   [{SEVERITY.get(int(d.severity), '?')}] {f}:{d.location.line} {d.spelling}")
+        print(f"   [{tag}] {f}:{d.location.line} {d.spelling}")
         if len(seen) >= 15:
             print("   ... (truncated)")
             break
-    return len(errors)
+    return len(errors) + len(promoted)
 
 
 def main():

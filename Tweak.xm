@@ -181,6 +181,9 @@ static void ZDHHInit(void) {
         // 微信可能还没把类加载完，延迟一轮再装；最多重试 10 次（共 5 秒）
         __block NSInteger attempts = 0;
         __block void (^tryInstall)(void) = nil;
+        // 递归 block 必须走 __weak 中转，否则 __block 变量被 block 强捕获形成
+        // retain cycle，Theos 默认 -Werror 下直接编译失败（-Warc-retain-cycles）
+        __block __weak void (^weakInstall)(void) = nil;
 
         tryInstall = ^{
             attempts++;
@@ -220,14 +223,17 @@ static void ZDHHInit(void) {
             if (attempts < 10) {
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
                                dispatch_get_main_queue(), ^{
-                    tryInstall();
+                    void (^block)(void) = weakInstall;
+                    if (block) block();
                 });
             }
         };
+        weakInstall = tryInstall;
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
-            tryInstall();
+            void (^block)(void) = weakInstall;
+            if (block) block();
         });
     }
 }
