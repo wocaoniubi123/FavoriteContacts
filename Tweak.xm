@@ -22,8 +22,11 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
-#import <substrate.h>
 #include <stdlib.h>
+
+// 不使用 CydiaSubstrate：
+//   自签（非越狱）环境没有 substrate，MSHookMessageEx 会直接符号缺失。
+//   ObjC 方法 hook 用 method_setImplementation 完全等价，不依赖任何注入框架。
 
 #import "ZDHHCommon.h"
 #import "ZDHHFavoriteBar.h"
@@ -138,7 +141,9 @@ static BOOL ZDHHInstallHook(Class cls, SEL sel, IMP replacement, IMP *original, 
     if (list) free(list);
 
     if (owned) {
-        MSHookMessageEx(cls, sel, replacement, original);
+        // 直接用 runtime 替换，等价于 MSHookMessageEx，但不依赖 CydiaSubstrate
+        IMP old = method_setImplementation(inherited, replacement);
+        if (original) *original = old;
         return YES;
     }
 
@@ -183,7 +188,7 @@ static BOOL ZDHHRegisterSettingsPage(void) {
 
     @try {
         ((void (*)(id, SEL, id, id, Class))objc_msgSend)(
-            mgr, registerSel, @"常用会话", @"2.0.1", [ZDHHSettingsViewController class]);
+            mgr, registerSel, @"常用会话", @"2.1.0", [ZDHHSettingsViewController class]);
         ZDHHLog(@"register: OK");
         return YES;
     } @catch (NSException *e) {
@@ -197,7 +202,7 @@ static BOOL ZDHHRegisterSettingsPage(void) {
 __attribute__((constructor))
 void ZDHHInit(void) {          // 不能加 static：未引用的 static 函数可能被 dead-strip，constructor 不执行
     @autoreleasepool {
-        ZDHHLog(@"loaded v2.0.1, waiting for WeChat classes");
+        ZDHHLog(@"loaded v2.1.0 (no substrate), waiting for WeChat classes");
         // 微信可能还没把类加载完，延迟一轮再装；最多重试 10 次（共 5 秒）
         __block NSInteger attempts = 0;
         __block void (^tryInstall)(void) = nil;

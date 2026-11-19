@@ -29,26 +29,40 @@ jobs:
           echo "$THEOS/bin" >> "$GITHUB_PATH"
           ls "$THEOS/sdks" || true
 
-      - name: Build rootful
+      - name: Build rootful + collect dylib
         run: |
           set -e
           make clean || true
           make package FINALPACKAGE=1
           mkdir -p dist
-          mv packages/*.deb dist/FavoriteContacts-rootful_2.0.1.deb
+          mv packages/*.deb dist/FavoriteContacts-rootful_2.1.0.deb
+
+          # 自签注入需要裸 dylib，这里一并产出（优先取 Theos 合并后的 fat 产物）
+          if [ -f .theos/obj/FavoriteContacts.dylib ]; then
+            cp .theos/obj/FavoriteContacts.dylib dist/FavoriteContacts.dylib
+          else
+            lipo -create \
+              .theos/obj/arm64/FavoriteContacts.dylib \
+              .theos/obj/arm64e/FavoriteContacts.dylib \
+              -output dist/FavoriteContacts.dylib
+          fi
+          echo "--- dylib archs ---"
+          lipo -info dist/FavoriteContacts.dylib || true
 
       - name: Build rootless
         run: |
           set -e
           make clean || true
           make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
-          mv packages/*.deb dist/FavoriteContacts-rootless_2.0.1.deb
+          mv packages/*.deb dist/FavoriteContacts-rootless_2.1.0.deb
           echo "--- artifacts ---"
           ls -la dist/
 
-      - name: Upload deb
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: FavoriteContacts-deb
-          path: dist/*.deb
+          name: FavoriteContacts-build
+          path: |
+            dist/*.deb
+            dist/*.dylib
           if-no-files-found: error

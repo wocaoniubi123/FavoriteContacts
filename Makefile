@@ -20,7 +20,7 @@ FavoriteContacts_FILES = Tweak.xm \
 
 FavoriteContacts_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-function
 FavoriteContacts_FRAMEWORKS = UIKit Foundation QuartzCore
-FavoriteContacts_LIBRARIES = substrate
+# 不链接 substrate：自签环境没有 CydiaSubstrate，链接它会导致 dylib 加载失败
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
